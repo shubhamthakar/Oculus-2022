@@ -1,25 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
-
-# import pyrebase
-
-# config = {
-#   "apiKey":"AIzaSyCda49a3JCXnyOhcmLlv4nnLcXVBbJhg_0",
-#   "authDomain": "oculus2022-75997.firebaseapp.com",
-#   "projectId": "oculus2022-75997",
-#   "storageBucket": "oculus2022-75997.appspot.com",
-#   "messagingSenderId": "379210659404",
-#   "appId": "1:379210659404:web:c5c2b6c56af7a895f866e9",
-#   "measurementId": "G-Q0M6S2CCW0"
-# }
-# firebase = pyrebase.initialize_app(config)
-# db = firebase.database()
-# db.child("users").child("Morty")
-
-# def registrationDetails(request, paymentId, eventName, userId):
-#     data = {"name": "Mortimer 'Morty' Smith"}
-#     db.child("Users").push(data)
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 import firebase_admin
@@ -29,10 +9,11 @@ from pathlib import Path
 import os
 from django.conf import settings
 
-
-#cred = credentials.Certificate(os.path.join(settings.BASE_DIR,'/OculusSite/creditials.json'))
+import os
+dirname = os.path.dirname(__file__)
+cred = credentials.Certificate(os.path.join(dirname, 'credentials.json'))
 #cred = credentials.Certificate('C:/Users/Shubham Thakar/Documents/shubham files/Development/Oculus 2022/APIserver/credentials.json')
-cred = credentials.Certificate('C:/Users/KashMir/Desktop/Kashish/Oculus-2022/Oculus-2022/credentials.json')
+#cred = credentials.Certificate('C:/Users/KashMir/Desktop/Kashish/Oculus-2022/Oculus-2022/credentials.json')
 
 firebase_admin.initialize_app(cred)
 db = firestore.client()
@@ -41,7 +22,6 @@ def registrationDetails(request):
 
     if request.method == 'POST':
 
-        #print(request.data)
         try: 
             
             data = {
@@ -50,7 +30,6 @@ def registrationDetails(request):
             'userId': request.data['userId']
             }
 
-            # Add a new doc in collection 'cities' with ID 'LA'
             print(db.collection('Payments').document().set(data))
             return Response({"Message": "Added Successfully"})
         except Exception as e: 
@@ -69,12 +48,10 @@ def addToTeam(request):
     if request.method == 'POST':
         try:
             print("okay")
-            # Create a reference to the cities collection
             RegisteredTeams = db.collection(u'RegisteredTeams')
 
-            # Create a query against the collection
             #queriedTeams = RegisteredTeams.where(u'code', u'==', request.data["teamCode"])
-            queriedTeams = RegisteredTeams.where(u'code', u'==', u'Bhushan').stream()
+            queriedTeams = RegisteredTeams.where(u'TeamCode', u'==', u'Bhushan').stream()
             # print(queriedTeams.to_dict())
             queriedTeam = None
             id = None
@@ -83,7 +60,7 @@ def addToTeam(request):
                 id = teams.id
                 queriedTeam = teams.to_dict()
             print(queriedTeam)
-            if queriedTeam['event'] != request.data['eventName']:
+            if queriedTeam['eventName'] != request.data['eventName']:
                 return Response({"Wrong Event"})
             uids = queriedTeam['member']
             print(uids)
@@ -95,3 +72,32 @@ def addToTeam(request):
         except Exception as e: 
             print(e)
             return Response({"Message": "Unsuccessful"})
+
+@api_view(['POST',])
+def userRegistrationDetails(request):
+    if request.method == 'POST':
+        try:
+            TeamUsers = db.collection(u'TeamUsers')
+            queriedTeamUser = TeamUsers.where(u'UserId', u'==', request.data['userId']).where(u'eventName', u'==', request.data['eventName']).stream()
+            
+            RegisteredTeams = db.collection(u'RegisteredTeams')
+            dict1 = None
+            for team in queriedTeamUser:
+                #print(f'{team.id} => {team.to_dict()}')
+                id = team.id
+                dict1 = team.to_dict()
+            if dict1 == None:
+                return Response({"Error":"User not a part of any team"})
+            teamCode = dict1['teamCode']
+            RegisteredTeam = RegisteredTeams.where(u'TeamCode', u'==', teamCode).stream()
+            for teams in RegisteredTeam:
+                #print(f'{teams.id} => {teams.to_dict()}')
+                id = teams.id
+                RegisteredTeamdict = teams.to_dict()
+            return Response({"teamDetails":RegisteredTeamdict})
+
+        except Exception as e: 
+            print(e)
+            return Response({"Message": "Unsuccessful"})
+
+
