@@ -31,7 +31,9 @@ from django.conf import settings
 
 
 #cred = credentials.Certificate(os.path.join(settings.BASE_DIR,'/OculusSite/creditials.json'))
-cred = credentials.Certificate('C:/Users/Shubham Thakar/Documents/shubham files/Development/Oculus 2022/APIserver/credentials.json')
+#cred = credentials.Certificate('C:/Users/Shubham Thakar/Documents/shubham files/Development/Oculus 2022/APIserver/credentials.json')
+cred = credentials.Certificate('C:/Users/KashMir/Desktop/Kashish/Oculus-2022/Oculus-2022/credentials.json')
+
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 @api_view(['POST',])
@@ -65,10 +67,31 @@ def registrationDetails(request):
 @api_view(['POST',])
 def addToTeam(request):
     if request.method == 'POST':
-        # Create a reference to the cities collection
-        RegisteredTeams = db.collection('RegisteredTeams')
+        try:
+            print("okay")
+            # Create a reference to the cities collection
+            RegisteredTeams = db.collection(u'RegisteredTeams')
 
-        # Create a query against the collection
-        #queriedTeams = RegisteredTeams.where(u'code', u'==', request.data["teamCode"])
-        queriedTeams = RegisteredTeams.where(u'code', u'==', 'Bhushan')
-        print(queriedTeams)
+            # Create a query against the collection
+            #queriedTeams = RegisteredTeams.where(u'code', u'==', request.data["teamCode"])
+            queriedTeams = RegisteredTeams.where(u'code', u'==', u'Bhushan').stream()
+            # print(queriedTeams.to_dict())
+            queriedTeam = None
+            id = None
+            for teams in queriedTeams:
+                print(f'{teams.id} => {teams.to_dict()}')
+                id = teams.id
+                queriedTeam = teams.to_dict()
+            print(queriedTeam)
+            if queriedTeam['event'] != request.data['eventName']:
+                return Response({"Wrong Event"})
+            uids = queriedTeam['member']
+            print(uids)
+            if len(uids) == int(queriedTeam['maxMembers']):
+                return Response({"Cannot add more members. Max Member Reached"})
+        
+            db.collection(u'RegisteredTeams').document(id).update({u'member': firestore.ArrayUnion([request.data['userId']])})
+            return Response({"Message": "Added Successfully"})
+        except Exception as e: 
+            print(e)
+            return Response({"Message": "Unsuccessful"})
