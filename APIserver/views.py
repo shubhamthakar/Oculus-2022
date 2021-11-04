@@ -8,6 +8,7 @@ from firebase_admin import firestore
 from pathlib import Path
 import os
 from django.conf import settings
+from django.utils.crypto import get_random_string
 
 import os
 dirname = os.path.dirname(__file__)
@@ -30,8 +31,42 @@ def registrationDetails(request):
             'userId': request.data['userId']
             }
 
-            print(db.collection('Payments').document().set(data))
-            return Response({"Message": "Added Successfully"})
+            db.collection('Payments').document().set(data)
+            print("payments created")
+            code = get_random_string(length=8)
+
+            Events = db.collection(u'Events')
+            queriedEvents = Events.where(u'Title', u'==', request.data["eventName"]).stream()
+            for event in queriedEvents:
+                #print(f'{event.id} => {event.to_dict()}')
+                id = event.id
+                eventDict = event.to_dict()
+            member = [request.data['userId']]
+
+            #Login for isSolo and adding amt is pending
+            data1 = {
+
+                'TeamCode': code,
+                'amount':0,
+                'eventName':request.data['eventName'],
+                'isSingle':eventDict['isSingle'],
+                'maxMembers':eventDict['max'],
+                'member':member,
+                'paymentId':request.data['paymentId'],
+            }
+            db.collection('RegisteredTeams').document().set(data1)
+            print("RegisteredTeams created")
+            data2 = {
+
+                'teamCode': code,
+                'eventName': request.data['eventName'],
+                'UserId': request.data['userId']
+            }
+            db.collection('TeamUsers').document().set(data2)
+            print("TeamUsers created")
+
+
+            return Response({"registrationDetails": data1})
         except Exception as e: 
             print(e)
             return Response({"Message": "Unsuccessful"})
@@ -47,11 +82,10 @@ def registrationDetails(request):
 def addToTeam(request):
     if request.method == 'POST':
         try:
-            print("okay")
             RegisteredTeams = db.collection(u'RegisteredTeams')
 
             #queriedTeams = RegisteredTeams.where(u'code', u'==', request.data["teamCode"])
-            queriedTeams = RegisteredTeams.where(u'TeamCode', u'==', u'Bhushan').stream()
+            queriedTeams = RegisteredTeams.where(u'TeamCode', u'==', request.data["teamCode"]).stream()
             # print(queriedTeams.to_dict())
             queriedTeam = None
             id = None
@@ -61,11 +95,11 @@ def addToTeam(request):
                 queriedTeam = teams.to_dict()
             print(queriedTeam)
             if queriedTeam['eventName'] != request.data['eventName']:
-                return Response({"Wrong Event"})
+                return Response({"Error":"Wrong Event"})
             uids = queriedTeam['member']
             print(uids)
             if len(uids) == int(queriedTeam['maxMembers']):
-                return Response({"Cannot add more members. Max Member Reached"})
+                return Response({"Error":"Cannot add more members. Max Member Reached"})
         
             db.collection(u'RegisteredTeams').document(id).update({u'member': firestore.ArrayUnion([request.data['userId']])})
             return Response({"Message": "Added Successfully"})
