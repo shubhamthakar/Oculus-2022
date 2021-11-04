@@ -102,6 +102,12 @@ def addToTeam(request):
                 return Response({"Error":"Cannot add more members. Max Member Reached"})
         
             db.collection(u'RegisteredTeams').document(id).update({u'member': firestore.ArrayUnion([request.data['userId']])})
+            data = {
+                'UserId':request.data['userId'],
+                'eventName':request.data['eventName'],
+                'teamCode':request.data["teamCode"]
+            }
+            db.collection('TeamUsers').document().set(data)
             return Response({"Message": "Added Successfully"})
         except Exception as e: 
             print(e)
