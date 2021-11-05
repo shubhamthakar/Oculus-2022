@@ -121,6 +121,7 @@ def userRegistrationDetails(request):
             queriedTeamUser = TeamUsers.where(u'UserId', u'==', request.data['userId']).where(u'eventName', u'==', request.data['eventName']).stream()
             
             RegisteredTeams = db.collection(u'RegisteredTeams')
+            Users = db.collection(u'Users')
             dict1 = None
             for team in queriedTeamUser:
                 #print(f'{team.id} => {team.to_dict()}')
@@ -134,6 +135,21 @@ def userRegistrationDetails(request):
                 #print(f'{teams.id} => {teams.to_dict()}')
                 id = teams.id
                 RegisteredTeamdict = teams.to_dict()
+            members = RegisteredTeamdict['member']
+            memberDetails = []
+            print(members)
+            for member in members:
+                userDetails = Users.where(u'uid', u'==', member).stream()
+                mail = None
+                name = None
+                for uDetail in userDetails:
+                    uDetail = uDetail.to_dict()
+                    mail = uDetail['email']
+                    name = uDetail['name']
+                memberDetails.append({"name":name,"email":mail,"uid":member})
+            print(memberDetails)
+            RegisteredTeamdict['member'] = memberDetails
+
             return Response({"teamDetails":RegisteredTeamdict})
 
         except Exception as e: 
