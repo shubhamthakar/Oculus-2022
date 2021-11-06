@@ -117,7 +117,7 @@ def addToTeam(request):
 def userRegistrationDetails(request):
     if request.method == 'POST':
         try:
-            TeamUsers = db.collection(u'TeamUsers')
+            TeamUsers = db.collection(u'TeamUsers') 
             queriedTeamUser = TeamUsers.where(u'UserId', u'==', request.data['userId']).where(u'eventName', u'==', request.data['eventName']).stream()
             
             RegisteredTeams = db.collection(u'RegisteredTeams')
