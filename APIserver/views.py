@@ -156,4 +156,93 @@ def userRegistrationDetails(request):
             print(e)
             return Response({"Message": "Unsuccessful"})
 
+@api_view(['PATCH',])
+def updateEvent(request):
 
+    if request.method == 'PATCH':
+        try:
+            data = request.data
+            Events = db.collection(u'Events')
+
+            if 'Title' not in data:
+                return Response({"Message": "Please Enter Event Name"})
+
+            
+            eventName = Events.where(u'Title', u'==', data["Title"]).stream()
+            id = None
+            for event in eventName:
+                id = event.id
+            updateEvent = db.collection(u'Events').document(id)
+
+            if 'Category' in data:
+                updateEvent.update({
+                    u'Category': data['Category'],
+                })
+            
+            if 'Date' in data:
+                updateEvent.update({
+                    u'Date': data['Date'],
+                })
+
+            if 'Description' in data:
+                updateEvent.update({
+                    u'Description': data['Description'],
+                })
+
+            if 'Prizes' in data:
+                updateEvent.update({
+                    u'Prizes': data['Prizes'],
+                })
+            return Response({"Message": "Changed Successfully"})
+
+        except Exception as e: 
+            print(e)
+            return Response({"Message": "Unsuccessful"})
+
+@api_view(['DELETE',])
+def deleteTeam(request):
+    if request.method == 'DELETE':
+        TeamUsers = db.collection(u'TeamUsers') 
+        RegisteredTeams = db.collection(u'RegisteredTeams')
+        RegisteredTeam = RegisteredTeams.where(u'TeamCode', u'==', request.data['teamCode']).stream()
+        TeamUser = TeamUsers.where(u'teamCode', u'==', request.data['teamCode']).stream()
+        for regTeam in RegisteredTeam:
+            RegisteredTeams.document(regTeam.id).delete()
+        for userTeam in TeamUser:
+            TeamUsers.document(userTeam.id).delete()
+        return Response({"Message": "Deleted Successfully"})
+
+# @api_view(['PATCH',])
+# def updateTeamsDetails(request):
+
+#     if request.method == 'PATCH':
+#         try:
+#             data = request.data
+#             Events = db.collection(u'RegisteredTeams')
+
+#             if 'TeamCode' not in data:
+#                 return Response({"Message": "Please Enter Team Code"})
+
+            
+#             teams = Events.where(u'Title', u'==', data["TeamCode"]).stream()
+#             id = None
+#             for team in teams:
+#                 id = team.id
+
+#             updateTeam = db.collection(u'RegisteredTeams').document(id)
+
+#             if 'amount' in data:
+#                 updateTeam.update({
+#                     u'amount': data['amount'],
+#                 })
+            
+#             if 'maxMembers' in data:
+#                 updateTeam.update({
+#                     u'maxMembers': data['maxMembers'],
+#                 })
+
+#             return Response({"Message": "Changed Successfully"})
+
+#         except Exception as e: 
+#             print(e)
+#             return Response({"Message": "Unsuccessful"})
