@@ -9,4 +9,6 @@ urlpatterns = [
     path('userRegistrationDetails/', views.userRegistrationDetails, name= 'userRegistrationDetails'),
     path('updateEvent/', views.updateEvent , name= 'updateEvent'),
     path('deleteTeam/', views.deleteTeam , name= 'deleteTeam'),
+    path('updateTeamsDetails/', views.updateTeamsDetails , name= 'updateTeamsDetails'),
+    path('addNotification/', views.addNotification , name= 'addNotification'),
 ]

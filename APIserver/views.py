@@ -137,7 +137,6 @@ def userRegistrationDetails(request):
                 RegisteredTeamdict = teams.to_dict()
             members = RegisteredTeamdict['member']
             memberDetails = []
-            print(members)
             for member in members:
                 userDetails = Users.where(u'uid', u'==', member).stream()
                 mail = None
@@ -147,7 +146,6 @@ def userRegistrationDetails(request):
                     mail = uDetail['email']
                     name = uDetail['name']
                 memberDetails.append({"name":name,"email":mail,"uid":member})
-            print(memberDetails)
             RegisteredTeamdict['member'] = memberDetails
 
             return Response({"teamDetails":RegisteredTeamdict})
@@ -212,37 +210,77 @@ def deleteTeam(request):
             TeamUsers.document(userTeam.id).delete()
         return Response({"Message": "Deleted Successfully"})
 
-# @api_view(['PATCH',])
-# def updateTeamsDetails(request):
+@api_view(['PATCH',])
+def updateTeamsDetails(request):
 
-#     if request.method == 'PATCH':
-#         try:
-#             data = request.data
-#             Events = db.collection(u'RegisteredTeams')
+    if request.method == 'PATCH':
+        try:
+            data = request.data
+            Events = db.collection(u'RegisteredTeams')
+            Users = db.collection(u'Users')
 
-#             if 'TeamCode' not in data:
-#                 return Response({"Message": "Please Enter Team Code"})
+            if 'TeamCode' not in data:
+                return Response({"Message": "Please Enter Team Code"})
 
             
-#             teams = Events.where(u'Title', u'==', data["TeamCode"]).stream()
-#             id = None
-#             for team in teams:
-#                 id = team.id
+            teams = Events.where(u'TeamCode', u'==', data["TeamCode"]).stream()
+            id = None
+            for team in teams:
+                id = team.id
 
-#             updateTeam = db.collection(u'RegisteredTeams').document(id)
+            updateTeam = db.collection(u'RegisteredTeams').document(id)
 
-#             if 'amount' in data:
-#                 updateTeam.update({
-#                     u'amount': data['amount'],
-#                 })
+            if 'amount' in data:
+                updateTeam.update({
+                    u'amount': data['amount'],
+                })
             
-#             if 'maxMembers' in data:
-#                 updateTeam.update({
-#                     u'maxMembers': data['maxMembers'],
-#                 })
+            if 'maxMembers' in data:
+                updateTeam.update({
+                    u'maxMembers': data['maxMembers'],
+                })
+            updatedTeam = db.collection(u'RegisteredTeams').document(id).get().to_dict()
+            event =  updatedTeam['eventName'] 
+            members = updatedTeam['member']
+            memberDetails = []
+            for member in members:
+                userDetails = Users.where(u'uid', u'==', member).stream()
+                mail = None
+                name = None
+                for uDetail in userDetails:
+                    uDetail = uDetail.to_dict()
+                    mail = uDetail['email']
+                    name = uDetail['name']
+                memberDetails.append({"name":name,"email":mail,"uid":member})
+            updatedTeam['member'] = memberDetails
 
-#             return Response({"Message": "Changed Successfully"})
+            allTeams = db.collection(u'RegisteredTeams').where(u'eventName', u'==', event).stream()
+            allTeamsList = []
+            for team in allTeams:
+                allTeamsList.append(team.to_dict())
 
-#         except Exception as e: 
-#             print(e)
-#             return Response({"Message": "Unsuccessful"})
+            return Response({
+                "updatedTeam": updatedTeam,
+                "allTeams":allTeamsList
+                })
+
+        except Exception as e: 
+            print(e)
+            return Response({"Message": "Unsuccessful"})
+
+@api_view(['POST',])
+def addNotification(request):
+    if request.method == 'POST':
+        data = request.data
+        Events = db.collection(u'Events')
+        events = Events.where(u'eventName', u'==', data["eventName"]).stream()
+        id = None
+        for event in events:
+            id = event.id
+        data = {
+            "imageURL" : data['imageURL'],
+            "notificationText" : data['notificationText'],
+            "timeStamp" : data['timeStamp']
+        }
+        db.collection(u'Events').document(id).collection(u'notification').add(data)
+        return Response({"Message": "Unsuccessful"})
