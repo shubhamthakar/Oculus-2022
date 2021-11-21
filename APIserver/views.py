@@ -101,11 +101,11 @@ def addToTeam(request):
                 queriedTeam = teams.to_dict()
             print(queriedTeam)
             if queriedTeam['eventName'] != request.data['eventName']:
-                return Response({"Error":"Wrong Event"})
+                return Response({"Message":"Wrong Event"})
             uids = queriedTeam['member']
             print(uids)
             if len(uids) == int(queriedTeam['maxMembers']):
-                return Response({"Error":"Cannot add more members. Max Member Reached"})
+                return Response({"Message":"Cannot add more members. Max Member Reached"})
         
             db.collection(u'RegisteredTeams').document(id).update({u'member': firestore.ArrayUnion([request.data['userId']])})
             data = {
@@ -123,30 +123,156 @@ def addToTeam(request):
 def userRegistrationDetails(request):
     if request.method == 'POST':
         try:
-            TeamUsers = db.collection(u'TeamUsers')
+            TeamUsers = db.collection(u'TeamUsers') 
             queriedTeamUser = TeamUsers.where(u'UserId', u'==', request.data['userId']).where(u'eventName', u'==', request.data['eventName']).stream()
             
             RegisteredTeams = db.collection(u'RegisteredTeams')
+            Users = db.collection(u'Users')
             dict1 = None
             for team in queriedTeamUser:
                 #print(f'{team.id} => {team.to_dict()}')
                 id = team.id
                 dict1 = team.to_dict()
             if dict1 == None:
-                return Response({"Error":"User not a part of any team"})
+                return Response({"Message":"User not a part of any team"})
             teamCode = dict1['teamCode']
             RegisteredTeam = RegisteredTeams.where(u'TeamCode', u'==', teamCode).stream()
             for teams in RegisteredTeam:
                 #print(f'{teams.id} => {teams.to_dict()}')
                 id = teams.id
                 RegisteredTeamdict = teams.to_dict()
+            members = RegisteredTeamdict['member']
+            memberDetails = []
+            for member in members:
+                userDetails = Users.where(u'uid', u'==', member).stream()
+                mail = None
+                name = None
+                for uDetail in userDetails:
+                    uDetail = uDetail.to_dict()
+                    mail = uDetail['email']
+                    name = uDetail['name']
+                memberDetails.append({"name":name,"email":mail,"uid":member})
+            RegisteredTeamdict['member'] = memberDetails
+
             return Response({"teamDetails":RegisteredTeamdict})
 
         except Exception as e: 
             print(e)
             return Response({"Message": "Unsuccessful"})
 
+@api_view(['PATCH',])
+def updateEvent(request):
 
+    if request.method == 'PATCH':
+        try:
+            data = request.data
+            Events = db.collection(u'Events')
+
+            if 'Title' not in data:
+                return Response({"Message": "Please Enter Event Name"})
+
+            
+            eventName = Events.where(u'Title', u'==', data["Title"]).stream()
+            id = None
+            for event in eventName:
+                id = event.id
+            updateEvent = db.collection(u'Events').document(id)
+
+            if 'Category' in data:
+                updateEvent.update({
+                    u'Category': data['Category'],
+                })
+            
+            if 'Date' in data:
+                updateEvent.update({
+                    u'Date': data['Date'],
+                })
+
+            if 'Description' in data:
+                updateEvent.update({
+                    u'Description': data['Description'],
+                })
+
+            if 'Prizes' in data:
+                updateEvent.update({
+                    u'Prizes': data['Prizes'],
+                })
+            return Response({"Message": "Changed Successfully"})
+
+        except Exception as e: 
+            print(e)
+            return Response({"Message": "Unsuccessful"})
+
+@api_view(['DELETE',])
+def deleteTeam(request):
+    if request.method == 'DELETE':
+        TeamUsers = db.collection(u'TeamUsers') 
+        RegisteredTeams = db.collection(u'RegisteredTeams')
+        RegisteredTeam = RegisteredTeams.where(u'TeamCode', u'==', request.data['teamCode']).stream()
+        TeamUser = TeamUsers.where(u'teamCode', u'==', request.data['teamCode']).stream()
+        for regTeam in RegisteredTeam:
+            RegisteredTeams.document(regTeam.id).delete()
+        for userTeam in TeamUser:
+            TeamUsers.document(userTeam.id).delete()
+        return Response({"Message": "Deleted Successfully"})
+
+@api_view(['PATCH',])
+def updateTeamsDetails(request):
+    if request.method == 'PATCH':
+        try:
+            data = request.data
+            Events = db.collection(u'RegisteredTeams')
+            Users = db.collection(u'Users')
+
+            if 'TeamCode' not in data:
+                return Response({"Message": "Please Enter Team Code"})
+
+            
+            teams = Events.where(u'TeamCode', u'==', data["TeamCode"]).stream()
+            id = None
+            for team in teams:
+                id = team.id
+
+            updateTeam = db.collection(u'RegisteredTeams').document(id)
+
+            if 'amount' in data:
+                updateTeam.update({
+                    u'amount': data['amount'],
+                })
+            
+            if 'maxMembers' in data:
+                updateTeam.update({
+                    u'maxMembers': data['maxMembers'],
+                })
+            updatedTeam = db.collection(u'RegisteredTeams').document(id).get().to_dict()
+            event =  updatedTeam['eventName'] 
+            members = updatedTeam['member']
+            memberDetails = []
+            for member in members:
+                userDetails = Users.where(u'uid', u'==', member).stream()
+                mail = None
+                name = None
+                for uDetail in userDetails:
+                    uDetail = uDetail.to_dict()
+                    mail = uDetail['email']
+                    name = uDetail['name']
+                memberDetails.append({"name":name,"email":mail,"uid":member})
+            updatedTeam['member'] = memberDetails
+
+            allTeams = db.collection(u'RegisteredTeams').where(u'eventName', u'==', event).stream()
+            allTeamsList = []
+            for team in allTeams:
+                allTeamsList.append(team.to_dict())
+
+            return Response({
+                "updatedTeam": updatedTeam,
+                "allTeams":allTeamsList
+                })
+        except Exception as e: 
+            print(e)
+            return Response({"Message": "Unsuccessful"})
+    
+        
 
 @api_view(['POST',])
 def adminAddOfflineTeam(request):
@@ -155,7 +281,7 @@ def adminAddOfflineTeam(request):
         #params {"eventName":, "email":, "phone":, "name":} returns teamCode
         try: 
             if not request.data["email"]:
-                return Response({"Error":"Email not provided"})
+                return Response({"Message":"Email not provided"})
             
             Usersdb = db.collection(u'Users')
             queriedUser = Usersdb.where(u'email', u'==', request.data["email"]).stream()
@@ -226,6 +352,7 @@ def adminAddOfflineTeam(request):
         except Exception as e: 
             print(e)
             return Response({"Message": "Unsuccessful"})
+    
 
 
 
@@ -252,7 +379,7 @@ class adminUpdateTeamMembers(APIView):
         uid = self.getUserId(request.data["email"])    
         #Checking whether email is registered
         if uid == None:
-            return Response({"error": "Email not registered"})
+            return Response({"Message": "Email not registered"})
 
 
         #querying registered teams 
@@ -266,7 +393,7 @@ class adminUpdateTeamMembers(APIView):
 
         #Checking whether teamCode is correct
         if dict1 == None:
-            return Response({"error": "Incorrect teamCode"})
+            return Response({"Message": "Incorrect teamCode"})
 
 
         #Checking whether user is already a part a team for that event
@@ -275,7 +402,7 @@ class adminUpdateTeamMembers(APIView):
         for team in TeamUsers:
             teamUserDict = team.to_dict()
         if teamUserDict != None:
-            return Response({"error":"User is already a part of team with teamcode "+str(teamUserDict["teamCode"])})
+            return Response({"Message":"User is already a part of team with teamcode "+str(teamUserDict["teamCode"])})
             
 
 
@@ -284,7 +411,7 @@ class adminUpdateTeamMembers(APIView):
         arr.append(uid)
         #Checking whether team is full
         if len(arr) > int(dict1["maxMembers"]):
-            return Response({"Error": "Cannot add more than "+str(dict1["maxMembers"])+" members"})
+            return Response({"Message": "Cannot add more than "+str(dict1["maxMembers"])+" members"})
         else:
             ##Adding memeber to team
             print("Intial dict",dict1)
@@ -313,7 +440,7 @@ class adminUpdateTeamMembers(APIView):
         uid = self.getUserId(request.data["email"])    
         #Checking whether email is registered
         if uid == None:
-            return Response({"error": "Email not registered"})
+            return Response({"Message": "Email not registered"})
         print(uid)
         TeamUsers = db.collection(u'TeamUsers').where(u'UserId', u'==', uid).where(u'eventName', u'==', request.data["eventName"]).stream()
         teamUserDict = None
@@ -321,7 +448,7 @@ class adminUpdateTeamMembers(APIView):
             id = team.id
             teamUserDict = team.to_dict()
         if teamUserDict == None:
-            return Response({"error": "User has not registered for the event"})
+            return Response({"Message": "User has not registered for the event"})
         #Deleting from teamUsers 
         TeamUsers = db.collection(u'TeamUsers').document(id).delete()
 
@@ -374,3 +501,19 @@ def eventSummary(request, eventName):
 
 
 
+@api_view(['POST',])
+def addNotification(request):
+    if request.method == 'POST':
+        data = request.data
+        Events = db.collection(u'Events')
+        events = Events.where(u'eventName', u'==', data["eventName"]).stream()
+        id = None
+        for event in events:
+            id = event.id
+        data = {
+            "imageURL" : data['imageURL'],
+            "notificationText" : data['notificationText'],
+            "timeStamp" : data['timeStamp']
+        }
+        db.collection(u'Events').document(id).collection(u'notification').add(data)
+        return Response({"Message": "Unsuccessful"})

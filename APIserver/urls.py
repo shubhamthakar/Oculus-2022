@@ -9,6 +9,9 @@ urlpatterns = [
     path('userRegistrationDetails/', views.userRegistrationDetails, name= 'userRegistrationDetails'),
     path('adminAddOfflineTeam/', views.adminAddOfflineTeam, name= 'adminAddOfflineTeam'),
     path('adminUpdateTeamMembers/', views.adminUpdateTeamMembers.as_view(), name='adminUpdateTeamMembers'),
-    path('event/<str:eventName>', views.eventSummary, name = 'eventSummary')
-
+    path('event/<str:eventName>', views.eventSummary, name = 'eventSummary'),
+    path('updateEvent/', views.updateEvent , name= 'updateEvent'),
+    path('deleteTeam/', views.deleteTeam , name= 'deleteTeam'),
+    path('updateTeamsDetails/', views.updateTeamsDetails , name= 'updateTeamsDetails'),
+    path('addNotification/', views.addNotification , name= 'addNotification'),
 ]
