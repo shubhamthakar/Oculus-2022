@@ -276,7 +276,7 @@ def updateTeamsDetails(request):
 
 @api_view(['POST',])
 def adminAddOfflineTeam(request):
-
+    #addUserHere
     if request.method == 'POST':
         #params {"eventName":, "email":, "phone":, "name":} returns teamCode
         try: 
@@ -322,7 +322,8 @@ def adminAddOfflineTeam(request):
                 #print(f'{event.id} => {event.to_dict()}')
                 id = event.id
                 eventDict = event.to_dict()
-            member = uid
+            member = []
+            member.append(uid)
 
             #Login for isSolo and adding amt is pending
             data1 = {
