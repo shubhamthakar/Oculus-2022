@@ -207,6 +207,20 @@ def updateEvent(request):
                 updateEvent.update({
                     u'Prizes': data['Prizes'],
                 })
+
+            if 'faq' in data:
+                updateEvent.update({
+                    u'faq': data['faq'],
+                })
+
+            if 'Fees' in data:
+                updateEvent.update({
+                    u'Fees': data['Fees'],
+                })
+            if 'rules' in data:
+                updateEvent.update({
+                    u'rules': data['rules'],
+                })
             return Response({"Message": "Changed Successfully"})
 
         except Exception as e:
@@ -392,6 +406,7 @@ class adminUpdateTeamMembers(APIView):
 
     def post(self, request):
         '''cases: email not there, teamcode wrong, user already in a team, team full, add to team'''
+        print(request.data)
         uid = self.getUserId(request.data["email"])
         # Checking whether email is registered
         if uid == None:
@@ -448,6 +463,7 @@ class adminUpdateTeamMembers(APIView):
             return Response({"registeredTeam": dict1})
 
     def delete(self, request):
+        print(request.data)
         '''cases: email not there, not in teamUsers, delete entire team, delete team member'''
         uid = self.getUserId(request.data["email"])
         # Checking whether email is registered
@@ -511,6 +527,11 @@ def eventSummary(request, eventName):
                 memberList.append(user.to_dict())
         teamDict["member"] = memberList
 
+        print(len(memberList), teamDict["maxMembers"])
+        if len(memberList) == teamDict["maxMembers"]:
+            teamDict["isComplete"] = True
+        else:
+            teamDict["isComplete"] = False
         allTeamDetails.append(teamDict)
         totalAmount += allTeamDetails[counter]['amount']
         teamCount += 1
@@ -544,3 +565,16 @@ def addNotification(request):
         db.collection(u'Events').document(
             id).collection(u'notification').add(data)
         return Response({"Message": "Unsuccessful"})
+
+
+@api_view(['GET'])
+def getEventDetails(request, eventName):
+    eventDetails = db.collection(u'Events').where(
+        u'Title', u'==', eventName).stream()
+    print(eventDetails)
+    data = {}
+    for item in eventDetails:
+        data = item.to_dict()
+        # print("Printing itemns")
+        print(data)
+    return Response(data)
