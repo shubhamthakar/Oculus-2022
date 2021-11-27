@@ -32,10 +32,17 @@ def registrationDetails(request):
     if request.method == 'POST':
 
         try:
+            TeamUsers = db.collection(u'TeamUsers')
+            TeamUsersDetails = TeamUsers.where(
+                u'teamName', u'==', request.data["teamName"]).stream()
+            if TeamUsersDetails != None:
+                return Response({"Message": "TeamName already exists"})
+                # request.data["teamName"]
             data = {
                 'paymentId': request.data['paymentId'],
                 'eventName': request.data['eventName'],
-                'userId': request.data['userId']
+                'userId': request.data['userId'],
+                'teamName': request.data["teamName"]
             }
 
             db.collection('Payments').document().set(data)
@@ -60,6 +67,7 @@ def registrationDetails(request):
                 'maxMembers': eventDict['max'],
                 'member': member,
                 'paymentId': request.data['paymentId'],
+                'TeamName': request.data["teamName"]
             }
             db.collection('RegisteredTeams').document().set(data1)
             print("RegisteredTeams created")
@@ -319,6 +327,12 @@ def adminAddOfflineTeam(request):
         try:
             if not request.data["email"]:
                 return Response({"Message": "Email not provided"})
+
+            TeamUsersdb = db.collection(u'TeamUsers')
+            queriedUser1 = TeamUsersdb.where(
+                u'email', u'==', request.data["email"]).stream()
+            if queriedUser1 != None:
+                return Response({"Message": "User is already in a team for the event"})
 
             Usersdb = db.collection(u'Users')
             queriedUser = Usersdb.where(
