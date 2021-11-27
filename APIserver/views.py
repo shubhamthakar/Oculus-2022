@@ -26,11 +26,8 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 @api_view(['POST',])
 def registrationDetails(request):
-
     if request.method == 'POST':
-
         try: 
-            
             data = {
             'paymentId': request.data['paymentId'],
             'eventName': request.data['eventName'],
@@ -51,7 +48,6 @@ def registrationDetails(request):
 
             #Login for isSolo and adding amt is pending
             data1 = {
-
                 'TeamCode': code,
                 'amount':0,
                 'eventName':request.data['eventName'],
@@ -70,6 +66,16 @@ def registrationDetails(request):
             }
             db.collection('TeamUsers').document().set(data2)
             print("TeamUsers created")
+
+            if "inviteCode" in request.data:
+                id = None
+                code = request.data["inviteCode"]
+                Users = db.collection(u'Users')
+                userDetails = Users.where(u'inviteCode', u'==', request.data["inviteCode"]).stream()
+                for uDetail in userDetails:
+                    id = uDetail.id
+                user = db.collection(u'Users').document(id)
+                user.update({"invited": firestore.Increment(1)})
 
 
             return Response({"registrationDetails": data1})
@@ -505,16 +511,37 @@ def eventSummary(request, eventName):
 @api_view(['POST',])
 def addNotification(request):
     if request.method == 'POST':
-        data = request.data
-        Events = db.collection(u'Events')
-        events = Events.where(u'eventName', u'==', data["eventName"]).stream()
-        id = None
-        for event in events:
-            id = event.id
-        data = {
-            "imageURL" : data['imageURL'],
-            "notificationText" : data['notificationText'],
-            "timeStamp" : data['timeStamp']
-        }
-        db.collection(u'Events').document(id).collection(u'notification').add(data)
-        return Response({"Message": "Unsuccessful"})
+        try:
+            data = request.data
+            data = {
+                "event": data['event'],
+                "imgUrl" : data['imgUrl'],
+                "text" : data['text'],
+                "date" : data['date']
+            }
+            db.collection(u'Notification').document().set(data)
+
+            return Response({"Message": "Successful"})
+        except Exception as e: 
+            print(e)
+            return Response({"Message": "Unsuccessful"})
+
+@api_view(['POST',])
+def addChat(request):
+    if request.method == 'POST':
+        try:
+            data = request.data
+            data = {
+                "event": data['event'],
+                "isRead" : data['isRead'],
+                "question" : data['question'],
+                "date" : data['date'],
+                "answer": data['answer'],
+                "userId": data['userId']
+            }
+            db.collection(u'Chat').document().set(data)
+
+            return Response({"Message": "Successful"})
+        except Exception as e: 
+            print(e)
+            return Response({"Message": "Unsuccessful"})
