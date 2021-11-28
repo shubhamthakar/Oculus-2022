@@ -658,3 +658,25 @@ def getNofications(request, eventName):
 
     print(data)
     return Response(data)
+
+
+@api_view(['PATCH', ])
+def updateChat(request):
+    if request.method == 'PATCH':
+        try:
+            data = request.data
+            chats = db.collection(u'Chat').where(
+                u'id', u'==', data['id']).stream()
+            id = None
+            for chat in chats:
+                id = chat.id
+
+            if 'answer' not in data:
+                return Response({"Message": "Please Send Answer"})
+            getChat = db.collection(u'Chat').document(id)
+            getChat.update({u'answer': data['answer']})
+
+            return Response({"Message": "Successful"})
+        except Exception as e:
+            print(e)
+            return Response({"Message": "Unsuccessful"})

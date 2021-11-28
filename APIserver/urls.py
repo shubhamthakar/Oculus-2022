@@ -23,4 +23,6 @@ urlpatterns = [
     path('getChats/<str:eventName>', views.getChats, name='getChats'),
     path('getNofications/<str:eventName>',
          views.getNofications, name='getNofications'),
+    path('updateChat/',
+         views.updateChat, name='updateChat'),
 ]
