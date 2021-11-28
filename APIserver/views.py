@@ -623,3 +623,19 @@ def getEventDetails(request, eventName):
         # print("Printing itemns")
         print(data)
     return Response(data)
+
+
+@api_view(['GET'])
+def getChats(request, eventName):
+    print(eventName)
+
+    if eventName == "null":
+        return Response({"Message": "Event name is not defined"})
+    chats = db.collection(u'Chat').where(
+        u'event', u'==', eventName).stream()
+    print("Chats: ", chats)
+    data = []
+    for item in chats:
+        data.append(item.to_dict())
+
+    return Response(data)
