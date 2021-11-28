@@ -25,4 +25,6 @@ urlpatterns = [
          views.getNofications, name='getNofications'),
     path('updateChat/',
          views.updateChat, name='updateChat'),
+    path("userRegistrationDetails/", views.userRegistrationDetails,
+         name="userRegistrationDetails")
 ]
