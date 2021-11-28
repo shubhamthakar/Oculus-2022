@@ -14,7 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
-import json
+import datetime
 
 
 import os
@@ -598,13 +598,15 @@ def addChat(request):
             data = request.data
             data = {
                 "event": data['event'],
-                "isRead": data['isRead'],
+                "isRead": False,
                 "question": data['question'],
                 "date": data['date'],
                 "answer": data['answer'],
-                "userId": data['userId'],
+                "userId": "",
+                "id": data["id"]
             }
-            db.collection(u'Chat').document().set(data)
+            print(data)
+            # db.collection(u'Chat').document().set(data)
 
             return Response({"Message": "Successful"})
         except Exception as e:
@@ -638,4 +640,21 @@ def getChats(request, eventName):
     for item in chats:
         data.append(item.to_dict())
 
+    return Response(data)
+
+
+@api_view(['GET'])
+def getNofications(request, eventName):
+    print(eventName)
+
+    if eventName == "null":
+        return Response({"Message": "Event name is not defined"})
+    notifs = db.collection(u'Notification').where(
+        u'event', u'==', eventName).stream()
+    print("Notifications: ", notifs)
+    data = []
+    for item in notifs:
+        data.append(item.to_dict())
+
+    print(data)
     return Response(data)

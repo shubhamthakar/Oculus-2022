@@ -21,4 +21,6 @@ urlpatterns = [
          views.getEventDetails, name='getEventDetails'),
     path('addChat/', views.addChat, name='addChat'),
     path('getChats/<str:eventName>', views.getChats, name='getChats'),
+    path('getNofications/<str:eventName>',
+         views.getNofications, name='getNofications'),
 ]
