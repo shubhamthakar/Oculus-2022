@@ -35,9 +35,7 @@ def registrationDetails(request):
             TeamUsers = db.collection(u'TeamUsers')
             TeamUsersDetails = TeamUsers.where(
                 u'teamName', u'==', request.data["teamName"]).stream()
-            if TeamUsersDetails != None:
-                return Response({"Message": "TeamName already exists"})
-                # request.data["teamName"]
+            # request.data["teamName"]
             data = {
                 'paymentId': request.data['paymentId'],
                 'eventName': request.data['eventName'],
