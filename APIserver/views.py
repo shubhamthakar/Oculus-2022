@@ -229,9 +229,9 @@ def updateEvent(request):
                     u'faq': data['faq'],
                 })
 
-            if 'Fees' in data:
+            if 'Fee' in data:
                 updateEvent.update({
-                    u'Fees': data['Fees'],
+                    u'Fee': data['Fee'],
                 })
             if 'rules' in data:
                 updateEvent.update({
@@ -331,6 +331,9 @@ def adminAddOfflineTeam(request):
             TeamUsersdb = db.collection(u'TeamUsers')
             queriedUser1 = TeamUsersdb.where(
                 u'email', u'==', request.data["email"]).stream()
+            for user in queriedUser1:
+                print("For loop: ", user)
+            print(request.data["email"], queriedUser1)
             if queriedUser1 != None:
                 return Response({"Message": "User is already in a team for the event"})
 
