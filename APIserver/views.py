@@ -32,12 +32,27 @@ def registrationDetails(request):
     if request.method == 'POST':
 
         try:
-            TeamUsers = db.collection(u'TeamUsers')
-            TeamUsersDetails = TeamUsers.where(
-                u'teamName', u'==', request.data["teamName"]).stream()
-            # if TeamUsersDetails != None:
-            #     return Response({"Message": "TeamName already exists"})
-            # request.data["teamName"]
+            RegisteredTeams = db.collection(u'RegisteredTeams')
+            # print(request.data)
+            TeamUsersDetails = [team for team in RegisteredTeams.where(
+                u'TeamName', u'==', request.data["teamName"]).stream()]
+            # breakpoint()
+
+            if len(TeamUsersDetails) != 0:
+                # print(TeamUsersDetails)
+                return Response({"Message": "TeamName already exists"})
+
+            Users = db.collection(u'Users')
+            userDetails = Users.where(
+                u'uid', u'==', request.data['userId']).stream()
+            mail = None
+            for uDetail in userDetails:
+                uDetail = uDetail.to_dict()
+                mail = uDetail['email']
+                print(mail)
+            if mail is None:
+                return Response({"Message": "UserId is incorrect. No such user exists"})
+
             data = {
                 'paymentId': request.data['paymentId'],
                 'eventName': request.data['eventName'],
@@ -53,7 +68,7 @@ def registrationDetails(request):
             queriedEvents = Events.where(
                 u'Title', u'==', request.data["eventName"]).stream()
             for event in queriedEvents:
-                #print(f'{event.id} => {event.to_dict()}')
+                # print(f'{event.id} => {event.to_dict()}')
                 id = event.id
                 eventDict = event.to_dict()
             member = [request.data['userId']]
@@ -70,38 +85,34 @@ def registrationDetails(request):
                 'TeamName': request.data["teamName"]
             }
             db.collection('RegisteredTeams').document().set(data1)
+
             print("RegisteredTeams created")
             data2 = {
-
+                'email': mail,
                 'teamCode': code,
                 'eventName': request.data['eventName'],
                 'UserId': request.data['userId']
             }
             db.collection('TeamUsers').document().set(data2)
             print("TeamUsers created")
-
-            if "inviteCode" in request.data:
-                id = None
-                code = request.data["inviteCode"]
-                Users = db.collection(u'Users')
-                userDetails = Users.where(
-                    u'inviteCode', u'==', request.data["inviteCode"]).stream()
-                for uDetail in userDetails:
-                    id = uDetail.id
-                user = db.collection(u'Users').document(id)
-                user.update({"invited": firestore.Increment(1)})
+            try:
+                if "inviteCode" in request.data:
+                    id = None
+                    code = request.data["inviteCode"]
+                    Users = db.collection(u'Users')
+                    userDetails = Users.where(
+                        u'inviteCode', u'==', request.data["inviteCode"]).stream()
+                    for uDetail in userDetails:
+                        id = uDetail.id
+                    user = db.collection(u'Users').document(id)
+                    user.update({"invited": firestore.Increment(1)})
+            except:
+                pass
 
             return Response({"registrationDetails": data1})
         except Exception as e:
             print(e)
             return Response({"Message": "Unsuccessful"})
-
-        # cars_ref = db.collection(u'Users')
-        # docs = cars_ref.stream()
-        # cars_list = []
-        # for doc in docs:
-        #     cars_list.append(doc.to_dict())
-        #     print(u'{} => {}'.format(doc.id, doc.to_dict()))
 
 
 @api_view(['POST', ])
