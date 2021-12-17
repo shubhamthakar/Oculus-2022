@@ -14,7 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
-import json
+import datetime
 
 
 import os
@@ -32,12 +32,27 @@ def registrationDetails(request):
     if request.method == 'POST':
 
         try:
-            TeamUsers = db.collection(u'TeamUsers')
-            TeamUsersDetails = TeamUsers.where(
-                u'teamName', u'==', request.data["teamName"]).stream()
-            if TeamUsersDetails != None:
+            RegisteredTeams = db.collection(u'RegisteredTeams')
+            # print(request.data)
+            TeamUsersDetails = [team for team in RegisteredTeams.where(
+                u'TeamName', u'==', request.data["teamName"]).stream()]
+            # breakpoint()
+
+            if len(TeamUsersDetails) != 0:
+                # print(TeamUsersDetails)
                 return Response({"Message": "TeamName already exists"})
-                # request.data["teamName"]
+
+            Users = db.collection(u'Users')
+            userDetails = Users.where(
+                u'uid', u'==', request.data['userId']).stream()
+            mail = None
+            for uDetail in userDetails:
+                uDetail = uDetail.to_dict()
+                mail = uDetail['email']
+                print(mail)
+            if mail is None:
+                return Response({"Message": "UserId is incorrect. No such user exists"})
+
             data = {
                 'paymentId': request.data['paymentId'],
                 'eventName': request.data['eventName'],
@@ -53,7 +68,7 @@ def registrationDetails(request):
             queriedEvents = Events.where(
                 u'Title', u'==', request.data["eventName"]).stream()
             for event in queriedEvents:
-                #print(f'{event.id} => {event.to_dict()}')
+                # print(f'{event.id} => {event.to_dict()}')
                 id = event.id
                 eventDict = event.to_dict()
             member = [request.data['userId']]
@@ -70,38 +85,34 @@ def registrationDetails(request):
                 'TeamName': request.data["teamName"]
             }
             db.collection('RegisteredTeams').document().set(data1)
+
             print("RegisteredTeams created")
             data2 = {
-
+                'email': mail,
                 'teamCode': code,
                 'eventName': request.data['eventName'],
                 'UserId': request.data['userId']
             }
             db.collection('TeamUsers').document().set(data2)
             print("TeamUsers created")
-
-            if "inviteCode" in request.data:
-                id = None
-                code = request.data["inviteCode"]
-                Users = db.collection(u'Users')
-                userDetails = Users.where(
-                    u'inviteCode', u'==', request.data["inviteCode"]).stream()
-                for uDetail in userDetails:
-                    id = uDetail.id
-                user = db.collection(u'Users').document(id)
-                user.update({"invited": firestore.Increment(1)})
+            try:
+                if "inviteCode" in request.data:
+                    id = None
+                    code = request.data["inviteCode"]
+                    Users = db.collection(u'Users')
+                    userDetails = Users.where(
+                        u'inviteCode', u'==', request.data["inviteCode"]).stream()
+                    for uDetail in userDetails:
+                        id = uDetail.id
+                    user = db.collection(u'Users').document(id)
+                    user.update({"invited": firestore.Increment(1)})
+            except:
+                pass
 
             return Response({"registrationDetails": data1})
         except Exception as e:
             print(e)
             return Response({"Message": "Unsuccessful"})
-
-        # cars_ref = db.collection(u'Users')
-        # docs = cars_ref.stream()
-        # cars_list = []
-        # for doc in docs:
-        #     cars_list.append(doc.to_dict())
-        #     print(u'{} => {}'.format(doc.id, doc.to_dict()))
 
 
 @api_view(['POST', ])
@@ -229,9 +240,9 @@ def updateEvent(request):
                     u'faq': data['faq'],
                 })
 
-            if 'Fees' in data:
+            if 'Fee' in data:
                 updateEvent.update({
-                    u'Fees': data['Fees'],
+                    u'Fee': data['Fee'],
                 })
             if 'rules' in data:
                 updateEvent.update({
@@ -334,9 +345,10 @@ def adminAddOfflineTeam(request):
             userpresent = False
             for user in queriedUser1:
                 userpresent = True
-
             if userpresent:
                 return Response({"Message": "User is already in a team for the event"})
+            
+                
 
             Usersdb = db.collection(u'Users')
             queriedUser = Usersdb.where(
@@ -619,13 +631,15 @@ def addChat(request):
             data = request.data
             data = {
                 "event": data['event'],
-                "isRead": data['isRead'],
+                "isRead": False,
                 "question": data['question'],
                 "date": data['date'],
                 "answer": data['answer'],
-                "userId": data['userId'],
+                "userId": "",
+                "id": data["id"]
             }
-            db.collection(u'Chat').document().set(data)
+            print(data)
+            # db.collection(u'Chat').document().set(data)
 
             return Response({"Message": "Successful"})
         except Exception as e:
@@ -662,3 +676,57 @@ def updatePaymentStatus(request):
         return Response({"Message": "Could not update payment status"})
 
 
+
+@api_view(['GET'])
+def getChats(request, eventName):
+    print(eventName)
+
+    if eventName == "null":
+        return Response({"Message": "Event name is not defined"})
+    chats = db.collection(u'Chat').where(
+        u'event', u'==', eventName).stream()
+    print("Chats: ", chats)
+    data = []
+    for item in chats:
+        data.append(item.to_dict())
+
+    return Response(data)
+
+
+@api_view(['GET'])
+def getNofications(request, eventName):
+    print(eventName)
+
+    if eventName == "null":
+        return Response({"Message": "Event name is not defined"})
+    notifs = db.collection(u'Notification').where(
+        u'event', u'==', eventName).stream()
+    print("Notifications: ", notifs)
+    data = []
+    for item in notifs:
+        data.append(item.to_dict())
+
+    print(data)
+    return Response(data)
+
+
+@api_view(['PATCH', ])
+def updateChat(request):
+    if request.method == 'PATCH':
+        try:
+            data = request.data
+            chats = db.collection(u'Chat').where(
+                u'id', u'==', data['id']).stream()
+            id = None
+            for chat in chats:
+                id = chat.id
+
+            if 'answer' not in data:
+                return Response({"Message": "Please Send Answer"})
+            getChat = db.collection(u'Chat').document(id)
+            getChat.update({u'answer': data['answer']})
+
+            return Response({"Message": "Successful"})
+        except Exception as e:
+            print(e)
+            return Response({"Message": "Unsuccessful"})
