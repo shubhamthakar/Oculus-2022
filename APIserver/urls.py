@@ -31,4 +31,5 @@ urlpatterns = [
     #     path('updateTeamsDetails/', views.updateTeamsDetails , name= 'updateTeamsDetails'),
     #     path('addNotification/', views.addNotification , name= 'addNotification'),
     path('addChat/', views.addChat, name='addChat'),
+    path('updatePaymentStatus/', views.updatePaymentStatus, name='updatePaymentStatus')
 ]

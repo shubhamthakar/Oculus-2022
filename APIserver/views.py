@@ -323,7 +323,7 @@ def updateTeamsDetails(request):
 def adminAddOfflineTeam(request):
     # addUserHere
     if request.method == 'POST':
-        # params {"eventName":, "email":, "phone":, "name":} returns teamCode
+        # params {"eventName":, "email":, "phone":, "name":, "paymentStatus":, "teamName":, "amount":} returns teamCode
         try:
             if not request.data["email"]:
                 return Response({"Message": "Email not provided"})
@@ -331,7 +331,11 @@ def adminAddOfflineTeam(request):
             TeamUsersdb = db.collection(u'TeamUsers')
             queriedUser1 = TeamUsersdb.where(
                 u'email', u'==', request.data["email"]).stream()
-            if queriedUser1 != None:
+            userpresent = False
+            for user in queriedUser1:
+                userpresent = True
+
+            if userpresent:
                 return Response({"Message": "User is already in a team for the event"})
 
             Usersdb = db.collection(u'Users')
@@ -384,12 +388,14 @@ def adminAddOfflineTeam(request):
             data1 = {
 
                 'TeamCode': code,
-                'amount': 0,
+                'teamName': request.data['teamName'],
+                'amount': request.data['amount'],
                 'eventName': request.data['eventName'],
                 'isSingle': eventDict['isSingle'],
                 'maxMembers': eventDict['max'],
                 'member': member,
                 'paymentId': "Offline",
+                'paymentStatus': request.data['paymentStatus']
             }
             db.collection('RegisteredTeams').document().set(data1)
             print("RegisteredTeams created")
@@ -399,7 +405,8 @@ def adminAddOfflineTeam(request):
 
                 'teamCode': code,
                 'eventName': request.data['eventName'],
-                'UserId': uid
+                'UserId': uid,
+                'email' : request.data['email']
             }
             db.collection('TeamUsers').document().set(data2)
             print("TeamUsers created")
@@ -448,6 +455,9 @@ class adminUpdateTeamMembers(APIView):
         if dict1 == None:
             return Response({"Message": "Incorrect teamCode"})
 
+        if dict1["eventName"] == request.data["eventName"]:
+            return Response({"Message": "Incorrect teamcode"})
+
         # Checking whether user is already a part a team for that event
         TeamUsers = db.collection(u'TeamUsers').where(u'UserId', u'==', uid).where(
             u'eventName', u'==', request.data["eventName"]).stream()
@@ -482,8 +492,19 @@ class adminUpdateTeamMembers(APIView):
                 "eventName": request.data["eventName"]
             }
             db.collection("TeamUsers").document().set(TeamUserAddDict)
+            if "inviteCode" in request.data:
+                id = None
+                code = request.data["inviteCode"]
+                Users = db.collection(u'Users')
+                userDetails = Users.where(
+                    u'inviteCode', u'==', request.data["inviteCode"]).stream()
+                for uDetail in userDetails:
+                    id = uDetail.id
+                user = db.collection(u'Users').document(id)
+                user.update({"invited": firestore.Increment(1)})
 
-            return Response({"registeredTeam": dict1})
+            return Response({"registrationDetails": dict1})
+            #return Response({"registeredTeam": dict1})
 
     def delete(self, request):
         print(request.data)
@@ -623,3 +644,21 @@ def getEventDetails(request, eventName):
         # print("Printing itemns")
         print(data)
     return Response(data)
+
+@api_view(['POST'])
+def updatePaymentStatus(request):
+    #params {"paymentStatus":, "teamCode":}
+    try:
+        RegisteredTeams = db.collection(u'RegisteredTeams').where(u'TeamCode', u'==', request.data["teamCode"]).stream()
+        data2 = {}
+        for teams in RegisteredTeams:
+            data2 = teams.to_dict()
+            docid = teams.id
+        data2["paymentStatus"] = request.data["paymentStatus"]
+        db.collection(u'RegisteredTeams').document(docid).set(data2)
+
+        return Response({"Message": "Updated Sucessfully"})
+    except:
+        return Response({"Message": "Could not update payment status"})
+
+
