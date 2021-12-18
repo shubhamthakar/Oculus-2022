@@ -467,7 +467,7 @@ class adminUpdateTeamMembers(APIView):
         if dict1 == None:
             return Response({"Message": "Incorrect teamCode"})
 
-        if dict1["eventName"] == request.data["eventName"]:
+        if dict1["eventName"] != request.data["eventName"]:
             return Response({"Message": "Incorrect teamcode"})
 
         # Checking whether user is already a part a team for that event
