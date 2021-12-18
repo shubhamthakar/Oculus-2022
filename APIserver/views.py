@@ -334,7 +334,7 @@ def updateTeamsDetails(request):
 def adminAddOfflineTeam(request):
     # addUserHere
     if request.method == 'POST':
-        # params {"eventName":, "email":, "phone":, "name":, "paymentStatus":, "teamName":, "amount":} returns teamCode
+        # params {"eventName":, "email":, "phone":, "name":, "paymentStatus":, "teamName":, "amount":, "maxMembers"} returns teamCode
         try:
             if not request.data["email"]:
                 return Response({"Message": "Email not provided"})
@@ -400,11 +400,11 @@ def adminAddOfflineTeam(request):
             data1 = {
 
                 'TeamCode': code,
-                'teamName': request.data['teamName'],
+                'TeamName': request.data['teamName'],
                 'amount': request.data['amount'],
                 'eventName': request.data['eventName'],
                 'isSingle': eventDict['isSingle'],
-                'maxMembers': eventDict['max'],
+                'maxMembers': request.data["maxMembers"],
                 'member': member,
                 'paymentId': "Offline",
                 'paymentStatus': request.data['paymentStatus']
@@ -422,8 +422,21 @@ def adminAddOfflineTeam(request):
             }
             db.collection('TeamUsers').document().set(data2)
             print("TeamUsers created")
+            try:
+                if "inviteCode" in request.data:
+                    id = None
+                    code = request.data["inviteCode"]
+                    Users = db.collection(u'Users')
+                    userDetails = Users.where(
+                        u'inviteCode', u'==', request.data["inviteCode"]).stream()
+                    for uDetail in userDetails:
+                        id = uDetail.id
+                    user = db.collection(u'Users').document(id)
+                    user.update({"invited": firestore.Increment(1)})
+            except:
+                pass
+            return Response({"registrationDetails": data1})
 
-            return Response({"TeamCode": code})
         except Exception as e:
             print(e)
             return Response({"Message": "Unsuccessful"})
@@ -504,19 +517,8 @@ class adminUpdateTeamMembers(APIView):
                 "eventName": request.data["eventName"]
             }
             db.collection("TeamUsers").document().set(TeamUserAddDict)
-            if "inviteCode" in request.data:
-                id = None
-                code = request.data["inviteCode"]
-                Users = db.collection(u'Users')
-                userDetails = Users.where(
-                    u'inviteCode', u'==', request.data["inviteCode"]).stream()
-                for uDetail in userDetails:
-                    id = uDetail.id
-                user = db.collection(u'Users').document(id)
-                user.update({"invited": firestore.Increment(1)})
 
-            return Response({"registrationDetails": dict1})
-            #return Response({"registeredTeam": dict1})
+            return Response({"registeredTeam": dict1})
 
     def delete(self, request):
         print(request.data)
