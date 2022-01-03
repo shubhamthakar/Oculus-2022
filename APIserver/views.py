@@ -76,13 +76,15 @@ def registrationDetails(request):
             # Login for isSolo and adding amt is pending
             data1 = {
                 'TeamCode': code,
-                'amount': 0,
+                'amount': request.data['amount'],
                 'eventName': request.data['eventName'],
                 'isSingle': eventDict['isSingle'],
-                'maxMembers': eventDict['max'],
+                'maxMembers': eventDict['maxMembers'],
                 'member': member,
                 'paymentId': request.data['paymentId'],
-                'TeamName': request.data["teamName"]
+                'TeamName': request.data["teamName"],
+                'paymentStatus': request.data['paymentStatus'],
+                'slotTime': request.data['slotTime']
             }
             db.collection('RegisteredTeams').document().set(data1)
 
@@ -200,7 +202,7 @@ def userRegistrationDetails(request):
 
 @api_view(['PATCH', ])
 def updateEvent(request):
-
+    #update availableSlots
     if request.method == 'PATCH':
         try:
             data = request.data
@@ -298,6 +300,10 @@ def updateTeamsDetails(request):
                 updateTeam.update({
                     u'maxMembers': data['maxMembers'],
                 })
+            if 'slotTime' in data:
+                updateTeam.update({
+                    u'slotTime': data['slotTime'],
+                })
             updatedTeam = db.collection(
                 u'RegisteredTeams').document(id).get().to_dict()
             event = updatedTeam['eventName']
@@ -334,14 +340,14 @@ def updateTeamsDetails(request):
 def adminAddOfflineTeam(request):
     # addUserHere
     if request.method == 'POST':
-        # params {"eventName":, "email":, "phone":, "name":, "paymentStatus":, "teamName":, "amount":, "maxMembers"} returns teamCode
+        # params {"eventName":, "email":, "phone":, "name":, "paymentStatus":, "teamName":, "amount":, "maxMembers", "slotTime"} returns teamCode
         try:
             if not request.data["email"]:
                 return Response({"Message": "Email not provided"})
 
             TeamUsersdb = db.collection(u'TeamUsers')
             queriedUser1 = TeamUsersdb.where(
-                u'email', u'==', request.data["email"]).stream()
+                u'email', u'==', request.data["email"]).where(u'eventName', u'==', request.data["eventName"]).stream()
             userpresent = False
             for user in queriedUser1:
                 userpresent = True
@@ -407,7 +413,8 @@ def adminAddOfflineTeam(request):
                 'maxMembers': request.data["maxMembers"],
                 'member': member,
                 'paymentId': "Offline",
-                'paymentStatus': request.data['paymentStatus']
+                'paymentStatus': request.data['paymentStatus'],
+                'slotTime': request.data['slotTime']
             }
             db.collection('RegisteredTeams').document().set(data1)
             print("RegisteredTeams created")
@@ -575,7 +582,11 @@ def eventSummary(request, eventName):
     for team in RegisteredTeams:
         teamDict = team.to_dict()
         print(teamDict)
-
+        votingDetails = db.collection(u'Voting').where(u'teamCode', u'==', teamDict['TeamCode']).stream()
+        voteCount = 0
+        for votes in votingDetails:
+            voteCount += 1
+        teamDict['voteCount'] = voteCount
         memberList = []
         for player in teamDict["member"]:
             currentUser = db.collection(u'Users').where(
