@@ -79,7 +79,7 @@ def registrationDetails(request):
                 'amount': request.data['amount'],
                 'eventName': request.data['eventName'],
                 'isSingle': eventDict['isSingle'],
-                'maxMembers': eventDict['maxMembers'],
+                'maxMembers': request.data['maxMembers'],
                 'member': member,
                 'paymentId': request.data['paymentId'],
                 'TeamName': request.data["teamName"],
