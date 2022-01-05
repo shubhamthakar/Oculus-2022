@@ -250,6 +250,10 @@ def updateEvent(request):
                 updateEvent.update({
                     u'rules': data['rules'],
                 })
+            if 'availableSlots' in data:
+                updateEvent.update({
+                    u'availableSlots': data['availableSlots'],
+                })
             return Response({"Message": "Changed Successfully"})
 
         except Exception as e:
