@@ -38,9 +38,9 @@ def registrationDetails(request):
                 u'TeamName', u'==', request.data["teamName"]).stream()]
             # breakpoint()
 
-            if len(TeamUsersDetails) != 0:
-                # print(TeamUsersDetails)
-                return Response({"Message": "TeamName already exists"})
+            # if len(TeamUsersDetails) != 0:
+            #     # print(TeamUsersDetails)
+            #     return Response({"Message": "TeamName already exists"})
 
             Users = db.collection(u'Users')
             userDetails = Users.where(
