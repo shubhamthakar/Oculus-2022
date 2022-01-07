@@ -52,17 +52,16 @@ def registrationDetails(request):
                 print(mail)
             if mail is None:
                 return Response({"Message": "UserId is incorrect. No such user exists"})
-
+            code = get_random_string(length=8)
             data = {
                 'paymentId': request.data['paymentId'],
                 'eventName': request.data['eventName'],
                 'userId': request.data['userId'],
-                'teamName': request.data["teamName"]
+                'TeamCode': code
             }
 
             db.collection('Payments').document().set(data)
             print("payments created")
-            code = get_random_string(length=8)
 
             Events = db.collection(u'Events')
             queriedEvents = Events.where(
@@ -84,7 +83,8 @@ def registrationDetails(request):
                 'paymentId': request.data['paymentId'],
                 'TeamName': request.data["teamName"],
                 'paymentStatus': request.data['paymentStatus'],
-                'slotTime': request.data['slotTime']
+                'slotTime': request.data['slotTime'],
+                'link': request.data['link']
             }
             db.collection('RegisteredTeams').document().set(data1)
 
@@ -254,6 +254,11 @@ def updateEvent(request):
                 updateEvent.update({
                     u'availableSlots': data['availableSlots'],
                 })
+
+            if 'link' in data:
+                updateEvent.update({
+                    u'link': data['link'],
+                })
             return Response({"Message": "Changed Successfully"})
 
         except Exception as e:
@@ -300,6 +305,11 @@ def updateTeamsDetails(request):
                     u'amount': data['amount'],
                 })
 
+            if 'paymentStatus' in data:
+                updateTeam.update({
+                    u'paymentStatus': data['paymentStatus'],
+                })
+
             if 'maxMembers' in data:
                 updateTeam.update({
                     u'maxMembers': data['maxMembers'],
@@ -308,6 +318,12 @@ def updateTeamsDetails(request):
                 updateTeam.update({
                     u'slotTime': data['slotTime'],
                 })
+
+            if 'link' in data:
+                updateTeam.update({
+                    u'link': data['link'],
+                })
+
             updatedTeam = db.collection(
                 u'RegisteredTeams').document(id).get().to_dict()
             event = updatedTeam['eventName']
@@ -369,18 +385,21 @@ def adminAddOfflineTeam(request):
                 userDict = user.to_dict()
             if userDict == None:
                 # Creating a new user
-                data1 = {
+                # data1 = {
 
-                    'email': request.data["email"],
-                    'name': request.data["name"],
-                    'phoneNumber': request.data["phone"],
-                }
-                docref = Usersdb.document()
-                docref.set(data1)
-                id = docref.id
-                # adding uid = document id
-                docref.set({u'uid': id}, merge=True)
-                print("New user created")
+                #     'email': request.data["email"],
+                #     'name': request.data["name"],
+                #     'phoneNumber': request.data["phone"],
+                # }
+                # docref = Usersdb.document()
+                # docref.set(data1)
+                # id = docref.id
+                # # adding uid = document id
+                # docref.set({u'uid': id}, merge=True)
+
+                print("No user present")
+                return Response({"Message": "User Does not exists"})
+
             else:
                 print("User already present")
 
@@ -418,7 +437,8 @@ def adminAddOfflineTeam(request):
                 'member': member,
                 'paymentId': "Offline",
                 'paymentStatus': request.data['paymentStatus'],
-                'slotTime': request.data['slotTime']
+                'slotTime': request.data['slotTime'],
+                'link':request.data['link']
             }
             db.collection('RegisteredTeams').document().set(data1)
             print("RegisteredTeams created")
