@@ -34,13 +34,34 @@ def registrationDetails(request):
         try:
             RegisteredTeams = db.collection(u'RegisteredTeams')
             # print(request.data)
-            TeamUsersDetails = [team for team in RegisteredTeams.where(
-                u'TeamName', u'==', request.data["teamName"]).stream()]
+            # TeamUsersDetails = [team for team in RegisteredTeams.where(
+            #     u'TeamName', u'==', request.data["teamName"]).stream()]
             # breakpoint()
 
             # if len(TeamUsersDetails) != 0:
             #     # print(TeamUsersDetails)
             #     return Response({"Message": "TeamName already exists"})
+
+            # Validating Order
+            PaymentDB = db.collection(u'Payments')
+            queriedPay = PaymentDB.where(u'paymentId',u'==', request.data['paymentId']).stream()
+            orderPresent = False
+            for order in queriedPay:
+                orderPresent = True
+            if orderPresent:
+                return Response({"Message": "Order already exists"})
+            
+
+            #Validating User
+            TeamUsersdb = db.collection(u'TeamUsers')
+            queriedUser1 = TeamUsersdb.where(
+                u'email', u'==', request.data["email"]).where(u'eventName', u'==', request.data["eventName"]).stream()
+            userpresent = False
+            for user in queriedUser1:
+                userpresent = True
+            if userpresent:
+                return Response({"Message": "User is already in a team for the event"})
+
 
             Users = db.collection(u'Users')
             userDetails = Users.where(
