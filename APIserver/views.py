@@ -321,6 +321,11 @@ def updateTeamsDetails(request):
 
             updateTeam = db.collection(u'RegisteredTeams').document(id)
 
+            if 'teamName' in data:
+                updateTeam.update({
+                    u'TeamName': data['teamName'],
+                })
+
             if 'amount' in data:
                 updateTeam.update({
                     u'amount': data['amount'],
