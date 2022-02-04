@@ -702,7 +702,7 @@ def addChat(request):
                 "id": data["id"]
             }
             print(data)
-            # db.collection(u'Chat').document().set(data)
+            db.collection(u'Chat').document().set(data)
 
             return Response({"Message": "Successful"})
         except Exception as e:
@@ -751,7 +751,10 @@ def getChats(request, eventName):
     print("Chats: ", chats)
     data = []
     for item in chats:
-        data.append(item.to_dict())
+        print('Item is: ',item.id)
+        query_data = item.to_dict()
+        query_data['docId'] = item.id
+        data.append(query_data)
 
     return Response(data)
 
@@ -775,14 +778,11 @@ def getNofications(request, eventName):
 
 @api_view(['PATCH', ])
 def updateChat(request):
+    #getting chat from docId
     if request.method == 'PATCH':
         try:
             data = request.data
-            chats = db.collection(u'Chat').where(
-                u'id', u'==', data['id']).stream()
-            id = None
-            for chat in chats:
-                id = chat.id
+            id = data['docId']
 
             if 'answer' not in data:
                 return Response({"Message": "Please Send Answer"})
