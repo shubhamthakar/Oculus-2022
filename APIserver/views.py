@@ -78,7 +78,9 @@ def registrationDetails(request):
                 'paymentId': request.data['paymentId'],
                 'eventName': request.data['eventName'],
                 'userId': request.data['userId'],
-                'TeamCode': code
+                'TeamCode': code,
+                'email':mail,
+                'amount':request.data['amount']
             }
 
             db.collection('Payments').document().set(data)
@@ -438,9 +440,24 @@ def adminAddOfflineTeam(request):
                 #print(f'{event.id} => {event.to_dict()}')
                 userDict = user.to_dict()
             uid = userDict["uid"]
+            mail = userDict["email"]
 
             # Adding to registeredteam
             code = get_random_string(length=8)
+
+            data = {
+                'paymentId': request.data['paymentId'],
+                'eventName': request.data['eventName'],
+                'userId': request.data['userId'],
+                'TeamCode': code,
+                'email':mail,
+                'amount':request.data['amount']
+            }
+
+            db.collection('Payments').document().set(data)
+            print("payments created")
+
+            
             Events = db.collection(u'Events')
             queriedEvents = Events.where(
                 u'Title', u'==', request.data["eventName"]).stream()
