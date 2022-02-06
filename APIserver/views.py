@@ -90,7 +90,7 @@ def registrationDetails(request):
                 'TeamCode': code,
                 'email':mail,
                 'amount':request.data['amount'],
-                'whatsappLink':eventDict['link']
+                'whatsappLink':eventDict['whatsappLink']
             }
 
             db.collection('Payments').document().set(data)
@@ -282,9 +282,9 @@ def updateEvent(request):
                     u'availableSlots': data['availableSlots'],
                 })
 
-            if 'link' in data:
+            if 'whatsappLink' in data:
                 updateEvent.update({
-                    u'link': data['link'],
+                    u'whatsappLink': data['whatsappLink'],
                 })
             return Response({"Message": "Changed Successfully"})
 
@@ -464,7 +464,7 @@ def adminAddOfflineTeam(request):
                 'TeamCode': code,
                 'email':mail,
                 'amount':request.data['amount'],
-                'whatsappLink':eventDict['link']
+                'whatsappLink':eventDict['whatsappLink']
             }
 
             db.collection('Payments').document().set(data)
