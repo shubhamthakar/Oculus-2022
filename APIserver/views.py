@@ -460,7 +460,7 @@ def adminAddOfflineTeam(request):
             data = {
                 'paymentId': request.data['paymentId'],
                 'eventName': request.data['eventName'],
-                'userId': request.data['userId'],
+                'userId': uid,
                 'TeamCode': code,
                 'email':mail,
                 'amount':request.data['amount'],
