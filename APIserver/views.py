@@ -73,18 +73,6 @@ def registrationDetails(request):
                 print(mail)
             if mail is None:
                 return Response({"Message": "UserId is incorrect. No such user exists"})
-            code = get_random_string(length=8)
-            data = {
-                'paymentId': request.data['paymentId'],
-                'eventName': request.data['eventName'],
-                'userId': request.data['userId'],
-                'TeamCode': code,
-                'email':mail,
-                'amount':request.data['amount']
-            }
-
-            db.collection('Payments').document().set(data)
-            print("payments created")
 
             Events = db.collection(u'Events')
             queriedEvents = Events.where(
@@ -93,6 +81,22 @@ def registrationDetails(request):
                 # print(f'{event.id} => {event.to_dict()}')
                 id = event.id
                 eventDict = event.to_dict()
+            
+            code = get_random_string(length=8)
+            data = {
+                'paymentId': request.data['paymentId'],
+                'eventName': request.data['eventName'],
+                'userId': request.data['userId'],
+                'TeamCode': code,
+                'email':mail,
+                'amount':request.data['amount'],
+                'whatsappLink':eventDict['link']
+            }
+
+            db.collection('Payments').document().set(data)
+            print("payments created")
+
+            
             member = [request.data['userId']]
 
             # Login for isSolo and adding amt is pending
@@ -442,6 +446,14 @@ def adminAddOfflineTeam(request):
             uid = userDict["uid"]
             mail = userDict["email"]
 
+            Events = db.collection(u'Events')
+            queriedEvents = Events.where(
+                u'Title', u'==', request.data["eventName"]).stream()
+            for event in queriedEvents:
+                #print(f'{event.id} => {event.to_dict()}')
+                id = event.id
+                eventDict = event.to_dict()
+
             # Adding to registeredteam
             code = get_random_string(length=8)
 
@@ -451,20 +463,15 @@ def adminAddOfflineTeam(request):
                 'userId': request.data['userId'],
                 'TeamCode': code,
                 'email':mail,
-                'amount':request.data['amount']
+                'amount':request.data['amount'],
+                'whatsappLink':eventDict['link']
             }
 
             db.collection('Payments').document().set(data)
             print("payments created")
 
             
-            Events = db.collection(u'Events')
-            queriedEvents = Events.where(
-                u'Title', u'==', request.data["eventName"]).stream()
-            for event in queriedEvents:
-                #print(f'{event.id} => {event.to_dict()}')
-                id = event.id
-                eventDict = event.to_dict()
+            
             member = []
             member.append(uid)
 
