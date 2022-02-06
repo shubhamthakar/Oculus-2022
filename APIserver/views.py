@@ -458,7 +458,7 @@ def adminAddOfflineTeam(request):
             code = get_random_string(length=8)
 
             data = {
-                'paymentId': request.data['paymentId'],
+                'paymentId': "offline",
                 'eventName': request.data['eventName'],
                 'userId': uid,
                 'TeamCode': code,
