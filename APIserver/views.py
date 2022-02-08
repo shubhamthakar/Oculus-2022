@@ -44,15 +44,15 @@ def registrationDetails(request):
 
             # Validating Order
             PaymentDB = db.collection(u'Payments')
-            queriedPay = PaymentDB.where(u'paymentId',u'==', request.data['paymentId']).stream()
+            queriedPay = PaymentDB.where(
+                u'paymentId', u'==', request.data['paymentId']).stream()
             orderPresent = False
             for order in queriedPay:
                 orderPresent = True
             if orderPresent:
                 return Response({"Message": "Order already exists"})
-            
 
-            #Validating User
+            # Validating User
             TeamUsersdb = db.collection(u'TeamUsers')
             queriedUser1 = TeamUsersdb.where(
                 u'email', u'==', request.data["email"]).where(u'eventName', u'==', request.data["eventName"]).stream()
@@ -61,7 +61,6 @@ def registrationDetails(request):
                 userpresent = True
             if userpresent:
                 return Response({"Message": "User is already in a team for the event"})
-
 
             Users = db.collection(u'Users')
             userDetails = Users.where(
@@ -81,22 +80,21 @@ def registrationDetails(request):
                 # print(f'{event.id} => {event.to_dict()}')
                 id = event.id
                 eventDict = event.to_dict()
-            
+
             code = get_random_string(length=8)
             data = {
                 'paymentId': request.data['paymentId'],
                 'eventName': request.data['eventName'],
                 'userId': request.data['userId'],
                 'TeamCode': code,
-                'email':mail,
-                'amount':request.data['amount'],
-                'whatsappLink':eventDict['whatsappLink']
+                'email': mail,
+                'amount': request.data['amount'],
+                'whatsappLink': eventDict['whatsappLink']
             }
 
             db.collection('Payments').document().set(data)
             print("payments created")
 
-            
             member = [request.data['userId']]
 
             # Login for isSolo and adding amt is pending
@@ -229,7 +227,7 @@ def userRegistrationDetails(request):
 
 @api_view(['PATCH', ])
 def updateEvent(request):
-    #update availableSlots
+    # update availableSlots
     if request.method == 'PATCH':
         try:
             data = request.data
@@ -405,8 +403,6 @@ def adminAddOfflineTeam(request):
                 userpresent = True
             if userpresent:
                 return Response({"Message": "User is already in a team for the event"})
-            
-                
 
             Usersdb = db.collection(u'Users')
             queriedUser = Usersdb.where(
@@ -462,16 +458,14 @@ def adminAddOfflineTeam(request):
                 'eventName': request.data['eventName'],
                 'userId': uid,
                 'TeamCode': code,
-                'email':mail,
-                'amount':request.data['amount'],
-                'whatsappLink':eventDict['whatsappLink']
+                'email': mail,
+                'amount': request.data['amount'],
+                'whatsappLink': eventDict['whatsappLink']
             }
 
             db.collection('Payments').document().set(data)
             print("payments created")
 
-            
-            
             member = []
             member.append(uid)
 
@@ -488,7 +482,7 @@ def adminAddOfflineTeam(request):
                 'paymentId': "Offline",
                 'paymentStatus': request.data['paymentStatus'],
                 'slotTime': request.data['slotTime'],
-                'link':request.data['link']
+                'link': request.data['link']
             }
             db.collection('RegisteredTeams').document().set(data1)
             print("RegisteredTeams created")
@@ -499,7 +493,7 @@ def adminAddOfflineTeam(request):
                 'teamCode': code,
                 'eventName': request.data['eventName'],
                 'UserId': uid,
-                'email' : request.data['email']
+                'email': request.data['email']
             }
             db.collection('TeamUsers').document().set(data2)
             print("TeamUsers created")
@@ -652,22 +646,28 @@ def eventSummary(request, eventName):
     totalAmount = 0
     teamCount = 0
     counter = 0
+    users = db.collection(u'Users').stream()
+    allUsers = []
+    for user in users:
+        allUsers.append(user.to_dict())
+    # print(u)
 
     for team in RegisteredTeams:
         teamDict = team.to_dict()
-        print(teamDict)
-        votingDetails = db.collection(u'Voting').where(u'teamCode', u'==', teamDict['TeamCode']).stream()
+        # print(teamDict)
+        votingDetails = db.collection(u'Voting').where(
+            u'teamCode', u'==', teamDict['TeamCode']).stream()
         voteCount = 0
         for votes in votingDetails:
             voteCount += 1
         teamDict['voteCount'] = voteCount
         memberList = []
+
         for player in teamDict["member"]:
-            currentUser = db.collection(u'Users').where(
-                u'uid', u'==', player).stream()
-            for user in currentUser:
-                print(user.to_dict())
-                memberList.append(user.to_dict())
+            for i in allUsers:
+                if i['uid'] == player:
+                    memberList.append(i)
+                    break
         teamDict["member"] = memberList
 
         print(len(memberList), teamDict["maxMembers"])
@@ -746,11 +746,13 @@ def getEventDetails(request, eventName):
         print(data)
     return Response(data)
 
+
 @api_view(['POST'])
 def updatePaymentStatus(request):
-    #params {"paymentStatus":, "teamCode":}
+    # params {"paymentStatus":, "teamCode":}
     try:
-        RegisteredTeams = db.collection(u'RegisteredTeams').where(u'TeamCode', u'==', request.data["teamCode"]).stream()
+        RegisteredTeams = db.collection(u'RegisteredTeams').where(
+            u'TeamCode', u'==', request.data["teamCode"]).stream()
         data2 = {}
         for teams in RegisteredTeams:
             data2 = teams.to_dict()
@@ -761,7 +763,6 @@ def updatePaymentStatus(request):
         return Response({"Message": "Updated Sucessfully"})
     except:
         return Response({"Message": "Could not update payment status"})
-
 
 
 @api_view(['GET'])
@@ -775,7 +776,7 @@ def getChats(request, eventName):
     print("Chats: ", chats)
     data = []
     for item in chats:
-        print('Item is: ',item.id)
+        print('Item is: ', item.id)
         query_data = item.to_dict()
         query_data['docId'] = item.id
         data.append(query_data)
@@ -802,7 +803,7 @@ def getNofications(request, eventName):
 
 @api_view(['PATCH', ])
 def updateChat(request):
-    #getting chat from docId
+    # getting chat from docId
     if request.method == 'PATCH':
         try:
             data = request.data
