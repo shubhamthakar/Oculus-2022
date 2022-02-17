@@ -652,14 +652,25 @@ def eventSummary(request, eventName):
         allUsers.append(user.to_dict())
     # print(u)
 
+    votes_db = db.collection(u'Voting').stream()
+    allVotes = []
+    for vote in votes_db:
+        allVotes.append(vote.to_dict())
+
     for team in RegisteredTeams:
         teamDict = team.to_dict()
         # print(teamDict)
-        votingDetails = db.collection(u'Voting').where(
-            u'teamCode', u'==', teamDict['TeamCode']).stream()
+
         voteCount = 0
-        for votes in votingDetails:
-            voteCount += 1
+        for vote in allVotes:
+            if vote['teamCode'] == teamDict['TeamCode']:
+                voteCount += 1
+
+        # votingDetails = db.collection(u'Voting').where(
+        #     u'teamCode', u'==', teamDict['TeamCode']).stream()
+        # voteCount = 0
+        # for votes in votingDetails:
+        #     voteCount += 1
         teamDict['voteCount'] = voteCount
         memberList = []
 
