@@ -27,5 +27,7 @@ urlpatterns = [
     path('updateChat/',
          views.updateChat, name='updateChat'),
     path("userRegistrationDetails/", views.userRegistrationDetails,
-         name="userRegistrationDetails")
+         name="userRegistrationDetails"),
+     path("downloadCSV/<str:eventName>", views.downloadCSV,
+         name="downloadCSV"),
 ]

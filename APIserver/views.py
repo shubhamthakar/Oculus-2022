@@ -1,3 +1,4 @@
+
 from django.shortcuts import render
 
 from rest_framework.response import Response
@@ -15,6 +16,9 @@ from django.utils.decorators import method_decorator
 from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 import datetime
+from wsgiref.util import FileWrapper
+from django.http import HttpResponse
+import pandas as pd
 
 
 import os
@@ -829,3 +833,101 @@ def updateChat(request):
         except Exception as e:
             print(e)
             return Response({"Message": "Unsuccessful"})
+
+@api_view(['GET',])
+def downloadCSV(request, eventName):
+    # Calculating totalAmount, teamCount, allTeamDetails
+    RegisteredTeams = db.collection(u'RegisteredTeams').where(
+        u'eventName', u'==', eventName).stream()
+    allTeamDetails = []
+    totalAmount = 0
+    teamCount = 0
+    counter = 0
+    users = db.collection(u'Users').stream()
+    allUsers = []
+    for user in users:
+        allUsers.append(user.to_dict())
+    # print(u)
+
+    votes_db = db.collection(u'Voting').stream()
+    allVotes = []
+    for vote in votes_db:
+        allVotes.append(vote.to_dict())
+
+    for team in RegisteredTeams:
+        teamDict = team.to_dict()
+        # print(teamDict)
+
+        voteCount = 0
+        for vote in allVotes:
+            if vote['teamCode'] == teamDict['TeamCode']:
+                voteCount += 1
+
+        # votingDetails = db.collection(u'Voting').where(
+        #     u'teamCode', u'==', teamDict['TeamCode']).stream()
+        # voteCount = 0
+        # for votes in votingDetails:
+        #     voteCount += 1
+        teamDict['voteCount'] = voteCount
+        memberList = []
+
+        for player in teamDict["member"]:
+            for i in allUsers:
+                if i['uid'] == player:
+                    memberList.append(i)
+                    break
+        teamDict["member"] = memberList
+
+        print(len(memberList), teamDict["maxMembers"])
+        if len(memberList) == teamDict["maxMembers"]:
+            teamDict["isComplete"] = True
+        else:
+            teamDict["isComplete"] = False
+        allTeamDetails.append(teamDict)
+        totalAmount += allTeamDetails[counter]['amount']
+        teamCount += 1
+        counter += 1
+        # team["memberList"] = memberList
+    # Calculating playerCount
+    TeamUsers = db.collection(u'TeamUsers').where(
+        u'eventName', u'==', eventName).stream()
+    playerCount = 0
+    for team in TeamUsers:
+        id = team.id
+        playerCount += 1
+
+    file_path = "./APIserver/files/eventSummary.csv"
+    FilePointer = open(file_path,"w+")
+
+    normalizedTeamDetails = []
+    for team in allTeamDetails:
+        ele = {}
+        for member in team['member']:
+            for k,v in member.items():
+                ele[k] = v
+        for k,v in team.items():
+            if k!= "member":
+                ele[k] = v
+        normalizedTeamDetails.append(ele)
+    
+    df = pd.DataFrame(normalizedTeamDetails)
+
+    print(df)
+    df.to_csv(FilePointer)
+
+    detailsDict = {}
+    detailsDict["totalAmount"] = totalAmount
+    detailsDict["playerCount"] = playerCount
+    detailsDict["teamCount"] = teamCount
+
+    df = pd.DataFrame(detailsDict, index=[0])
+    df.to_csv(FilePointer)
+    FilePointer.close()
+    FilePointer = open(file_path, "r")
+
+    
+
+    response = HttpResponse(FileWrapper(FilePointer),content_type='application/csv')
+    response['Content-Disposition'] = 'attachment; filename=eventSummary.csv'
+
+    return response

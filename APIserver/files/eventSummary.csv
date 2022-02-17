@@ -1,0 +1,5 @@
+,inviteCode,uid,phoneNumber,email,name,invited,maxMembers,isSingle,slotTime,eventName,paymentStatus,link,TeamCode,paymentId,TeamName,amount,voteCount,isComplete,college,whatsappLink
+0,awzL5kz1SwNdjaer2mEhf1,DQx9pmQep2VcCPCJUyg1Q5xTbOH3,8329115435,vivek.rajput@spit.ac.in,Vivek Rajput,0,1,True,,Sargam,True,,bS1DMmF1,order_16752324uYO5hW1kTGoKqCSJ5L9Bcxi1p,Single Player,70,0,True,,
+1,AOxRI5s,ROoY8pAgBYbsuuBerMl2eNppNzK2,9322273302,pparam2610@gmail.com,Param Patil,1,4,True,,Sargam,True,,neVtfDFE,Offline,Single Event,150,1,False,,
+,totalAmount,playerCount,teamCount
+0,220,2,2

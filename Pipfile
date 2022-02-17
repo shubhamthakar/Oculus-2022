@@ -9,6 +9,7 @@ djangorestframework = "*"
 django-cors-headers = "*"
 firebase-admin = "*"
 django-heroku = "*"
+pandas = "*"
 
 [dev-packages]
 
